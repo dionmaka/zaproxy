@@ -62,6 +62,7 @@ import org.zaproxy.zap.extension.users.ExtensionUserManagement;
 import org.zaproxy.zap.model.Context;
 import org.zaproxy.zap.users.User;
 import org.zaproxy.zap.utils.FontUtils;
+import org.zaproxy.zap.utils.ZapHtmlLabel;
 import org.zaproxy.zap.utils.ZapNumberSpinner;
 import org.zaproxy.zap.utils.ZapTextArea;
 import org.zaproxy.zap.utils.ZapTextField;
@@ -70,6 +71,7 @@ import org.zaproxy.zap.view.LayoutHelper;
 import org.zaproxy.zap.view.NodeSelectDialog;
 
 /** The Context Panel shown for configuring a Context's authentication methods. */
+@SuppressWarnings("serial")
 public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
 
     private static final Logger log = LogManager.getLogger(ContextAuthenticationPanel.class);
@@ -100,7 +102,7 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
     private static final String LABEL_POLL_FREQUENCY =
             Constant.messages.getString("authentication.panel.label.freq");
     private static final String LABEL_CONFIG_NOT_NEEDED =
-            Constant.messages.getHtmlWrappedString("sessionmanagement.panel.label.noConfigPanel");
+            Constant.messages.getString("sessionmanagement.panel.label.noConfigPanel");
     private static final String LABEL_STRATEGY =
             Constant.messages.getString("authentication.panel.label.strategy");
     private static final String STRATEGY_PREFIX = "authentication.panel.label.strategy.";
@@ -179,7 +181,7 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
         scrollPanel.setViewportView(panel);
         this.add(scrollPanel);
 
-        panel.add(new JLabel(LABEL_DESCRIPTION), LayoutHelper.getGBC(0, 0, 1, 1.0D));
+        panel.add(new ZapHtmlLabel(LABEL_DESCRIPTION), LayoutHelper.getGBC(0, 0, 1, 1.0D));
 
         // Method type combo box
         panel.add(
@@ -272,9 +274,8 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
             return;
         }
 
-        if (log.isDebugEnabled()) {
-            log.debug("Creating new panel for configuring: " + newMethodType.getName());
-        }
+        log.debug("Creating new panel for configuring: {}", newMethodType.getName());
+
         this.getConfigContainerPanel().removeAll();
 
         // show the panel according to whether the authentication type needs configuration
@@ -283,7 +284,8 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
             getConfigContainerPanel().add(shownConfigPanel, BorderLayout.CENTER);
         } else {
             shownConfigPanel = null;
-            getConfigContainerPanel().add(new JLabel(LABEL_CONFIG_NOT_NEEDED), BorderLayout.CENTER);
+            getConfigContainerPanel()
+                    .add(new ZapHtmlLabel(LABEL_CONFIG_NOT_NEEDED), BorderLayout.CENTER);
         }
         this.shownMethodType = newMethodType;
 
@@ -311,7 +313,7 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
                         public void itemStateChanged(ItemEvent e) {
                             if (e.getStateChange() == ItemEvent.SELECTED
                                     && !e.getItem().equals(shownMethodType)) {
-                                log.debug("Selected new Authentication type: " + e.getItem());
+                                log.debug("Selected new Authentication type: {}", e.getItem());
 
                                 AuthenticationMethodType type =
                                         ((AuthenticationMethodType) e.getItem());
@@ -596,12 +598,10 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
     @Override
     public void initContextData(Session session, Context uiSharedContext) {
         selectedAuthenticationMethod = uiSharedContext.getAuthenticationMethod();
-        if (log.isDebugEnabled())
-            log.debug(
-                    "Initializing configuration panel for authentication method: "
-                            + selectedAuthenticationMethod
-                            + " for context "
-                            + uiSharedContext.getName());
+        log.debug(
+                "Initializing configuration panel for authentication method: {} for context {}",
+                selectedAuthenticationMethod,
+                uiSharedContext.getName());
 
         resetLoggedInOutIndicators();
 
@@ -647,8 +647,8 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
                     && shownMethodType.isTypeForMethod(selectedAuthenticationMethod)) {
                 if (shownMethodType.hasOptionsPanel()) {
                     log.debug(
-                            "Binding authentication method to existing panel of proper type for context "
-                                    + uiSharedContext.getName());
+                            "Binding authentication method to existing panel of proper type for context {}",
+                            uiSharedContext.getName());
                     shownConfigPanel.bindMethod(
                             selectedAuthenticationMethod, getAuthenticationIndicatorsPanel());
                 }
@@ -661,8 +661,8 @@ public class ContextAuthenticationPanel extends AbstractContextPropertiesPanel {
                     // Selecting the type here will also force the selection listener to run and
                     // change the config panel accordingly
                     log.debug(
-                            "Binding authentication method to new panel of proper type for context "
-                                    + uiSharedContext.getName());
+                            "Binding authentication method to new panel of proper type for context {}",
+                            uiSharedContext.getName());
                     // Add hack to make sure no confirmation is needed if a change has been done
                     // somewhere else (e.g. API)
                     needsConfirm = false;

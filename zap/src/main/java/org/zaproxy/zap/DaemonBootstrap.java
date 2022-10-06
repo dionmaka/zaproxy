@@ -84,15 +84,19 @@ class DaemonBootstrap extends HeadlessBootstrap {
                                     return;
                                 }
 
+                                HeadlessBootstrap.checkForUpdates();
+
                                 try {
                                     // Allow extensions to pick up command line args in daemon mode
                                     control.getExtensionLoader().hookCommandLineListener(getArgs());
                                     control.runCommandLine();
+                                } catch (ShutdownRequestedException e) {
+                                    control.shutdown(false);
+                                    logger.info("{} terminated.", Constant.PROGRAM_TITLE);
+                                    return;
                                 } catch (Exception e) {
                                     logger.error(e.getMessage(), e);
                                 }
-
-                                HeadlessBootstrap.checkForUpdates();
 
                                 // This is the only non-daemon thread, so should keep running
                                 // CoreAPI.handleApiAction uses System.exit to shutdown

@@ -58,6 +58,7 @@ import org.apache.logging.log4j.Logger;
  * @see javax.swing.JTable
  * @see javax.swing.JScrollPane
  */
+@SuppressWarnings("serial")
 public abstract class PagingTableModel<T> extends AbstractTableModel {
     private static final long serialVersionUID = -6353414328926478100L;
 
@@ -417,7 +418,7 @@ public abstract class PagingTableModel<T> extends AbstractTableModel {
             try {
                 page = loadPage(segment.getBase(), segment.getLength());
             } catch (Exception e) {
-                logger.warn("error retrieving page at " + segment.getBase() + ": aborting", e);
+                logger.warn("error retrieving page at {}: aborting", segment.getBase(), e);
                 pending.remove(segment);
                 return;
             }

@@ -49,6 +49,7 @@
 // ZAP: 2021/09/16 Add support for enabling app integration in containers
 // ZAP: 2022/02/25 Deprecate options no longer in use.
 // ZAP: 2022/02/26 Remove code deprecated in 2.5.0
+// ZAP: 2022/09/21 Use format specifiers instead of concatenation when logging.
 package org.parosproxy.paros.extension.option;
 
 import java.awt.Window;
@@ -58,7 +59,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -73,6 +73,7 @@ import org.parosproxy.paros.extension.AbstractDialog;
 import org.parosproxy.paros.view.View;
 import org.parosproxy.paros.view.WorkbenchPanel;
 import org.zaproxy.zap.utils.FontUtils;
+import org.zaproxy.zap.utils.ZapHtmlLabel;
 
 // ZAP: Added support for selecting the locale
 
@@ -629,8 +630,8 @@ public class OptionsParamView extends AbstractParam {
                                                 .forEach(SwingUtilities::updateComponentTreeUI);
                                     } catch (Exception e2) {
                                         LOG.warn(
-                                                "Failed to set the look and feel: "
-                                                        + e2.getMessage());
+                                                "Failed to set the look and feel: {}",
+                                                e2.getMessage());
                                     } finally {
                                         dialog.setVisible(false);
                                         dialog.dispose();
@@ -746,7 +747,8 @@ public class OptionsParamView extends AbstractParam {
             if (mainPanel == null) {
                 mainPanel = new JPanel();
                 mainPanel.add(
-                        new JLabel(Constant.messages.getString("view.options.warn.applylaf")));
+                        new ZapHtmlLabel(
+                                Constant.messages.getString("view.options.warn.applylaf")));
             }
             return mainPanel;
         }

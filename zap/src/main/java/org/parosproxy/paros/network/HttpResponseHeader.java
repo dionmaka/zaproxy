@@ -42,6 +42,8 @@
 // ZAP: 2020/11/10 Add convenience method isCss().
 // ZAP: 2020/11/26 Use Log4j 2 classes for logging.
 // ZAP: 2021/05/14 Remove redundant type arguments.
+// ZAP: 2022/09/12 Allow arbitrary HTTP versions.
+// ZAP: 2022/09/21 Use format specifiers instead of concatenation when logging.
 package org.parosproxy.paros.network;
 
 import java.net.HttpCookie;
@@ -212,12 +214,6 @@ public class HttpResponseHeader extends HttpHeader {
         mStatusCodeString = matcher.group(2);
         setReasonPhrase(matcher.group(3));
 
-        if (!mVersion.equalsIgnoreCase(HTTP10) && !mVersion.equalsIgnoreCase(HTTP11)) {
-            mMalformedHeader = true;
-            throw new HttpMalformedHeaderException("Unexpected version: " + mVersion);
-            // return false;
-        }
-
         try {
             mStatusCode = Integer.parseInt(mStatusCodeString);
         } catch (NumberFormatException e) {
@@ -352,7 +348,7 @@ public class HttpResponseHeader extends HttpHeader {
                     }
                     return parsedCookies;
                 } catch (IllegalArgumentException e2) {
-                    log.error("Failed to parse cookie: " + c, e);
+                    log.error("Failed to parse cookie: {}", c, e);
                 }
             }
         }

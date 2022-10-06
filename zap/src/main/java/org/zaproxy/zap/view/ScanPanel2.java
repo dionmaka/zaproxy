@@ -55,6 +55,7 @@ import org.zaproxy.zap.utils.SortedComboBoxModel;
  * This is a cleaner version of ScanPanel which doesn't mix functionality and the UI.
  * Implemented as a new set of classes for backwards compatibility with existing add-ons
  */
+@SuppressWarnings("serial")
 public abstract class ScanPanel2<GS extends GenericScanner2, SC extends ScanController<GS>>
         extends AbstractPanel {
     private static final long serialVersionUID = 1L;
@@ -106,7 +107,7 @@ public abstract class ScanPanel2<GS extends GenericScanner2, SC extends ScanCont
         selectScanEntry =
                 new ScanEntry<>(Constant.messages.getString(prefix + ".toolbar.progress.select"));
         initialize(icon);
-        log.debug("Constructor " + prefix);
+        log.debug("Constructor {}", prefix);
     }
 
     /** This method initializes this */
@@ -536,7 +537,7 @@ public abstract class ScanPanel2<GS extends GenericScanner2, SC extends ScanCont
     }
 
     private void scanFinshedEventHandler(int id, String host) {
-        log.debug("scanFinished " + prefix + " on " + host);
+        log.debug("scanFinished {} on {}", prefix, host);
         if (this.getSelectedScanner() != null && this.getSelectedScanner().getScanId() == id) {
             updateProgressAndButtonsState(getSelectedScanner());
         }
@@ -600,7 +601,7 @@ public abstract class ScanPanel2<GS extends GenericScanner2, SC extends ScanCont
     }
 
     public void reset() {
-        log.debug("reset " + prefix);
+        log.debug("reset {}", prefix);
 
         progressModel.removeAllElements();
         progressSelect.addItem(selectScanEntry);

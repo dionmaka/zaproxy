@@ -1,6 +1,43 @@
 # Changelog
 All notable changes to the docker containers will be documented in this file.
 
+### 2022-09-28
+ - Removed zap-cli from weekly/live.
+
+### 2022-09-27
+ - Fixed problem where python-owasp-zap-v2.4 was getting an older version.
+ - Use curl for the weekly/live health checks.
+
+### 2022-09-26
+ - Changed weekly image to use debian:unstable-slim.
+
+### 2022-09-20
+ - Changed live image to use debian:unstable-slim.
+
+### 2022-09-15
+ - No longer include depreciated addOns job.
+
+### 2022-08-10
+ - The packaged scans will no longer warn if the default hooks file is not found.
+
+### 2022-08-05
+ - Alert_on_Unexpected_Content_Types.js > Added Content-Type text/plain to the list of expected types.
+ 
+### 2022-07-30
+ - Updated to use Webswing 22.1.3.
+
+### 2022-06-06
+ - Updated to use Webswing 22.1.2
+
+### 2022-06-03
+ - Add support for absolute file path in all scan options which require a file.
+
+### 2022-04-11
+ - Updated to use Webswing 21.2.8
+
+### 2022-03-28
+ - Added awscli to all of the docker images except 'bare'.
+
 ### 2021-12-27
  - Updated to use Webswing 21.2.5
 

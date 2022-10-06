@@ -54,7 +54,6 @@ import org.zaproxy.zap.model.SessionUtils;
 import org.zaproxy.zap.utils.FontUtils;
 import org.zaproxy.zap.utils.LocaleUtils;
 import org.zaproxy.zap.view.LocaleDialog;
-import org.zaproxy.zap.view.ProxyDialog;
 
 /**
  * The bootstrap process for GUI mode.
@@ -123,7 +122,7 @@ public class GuiBootstrap extends ZapBootstrap {
                 awtAppClassName.setAccessible(true);
                 awtAppClassName.set(null, Constant.PROGRAM_NAME);
             } catch (Exception e) {
-                logger.warn("Failed to set awt app class name: " + e.getMessage());
+                logger.warn("Failed to set awt app class name: {}", e.getMessage());
             }
         }
     }
@@ -142,10 +141,12 @@ public class GuiBootstrap extends ZapBootstrap {
                         Constant.messages.getString("start.title.error"),
                         JOptionPane.ERROR_MESSAGE);
             }
-            logger.fatal("Failed to initialise: " + e.getMessage(), e);
+            logger.fatal("Failed to initialise: {}", e.getMessage(), e);
             System.err.println(e.getMessage());
             System.exit(1);
         }
+
+        UIManager.put("PasswordField.showRevealButton", true);
 
         OptionsParam options = Model.getSingleton().getOptionsParam();
         OptionsParamView viewParam = options.getViewParam();
@@ -162,8 +163,6 @@ public class GuiBootstrap extends ZapBootstrap {
         }
 
         View.getSingleton().showSplashScreen();
-
-        promptForProxyDetailsIfNeeded(options);
 
         Thread bootstrap =
                 new Thread(
@@ -250,10 +249,20 @@ public class GuiBootstrap extends ZapBootstrap {
                                             Constant.getZapHome()));
 
                         } else if (getArgs().isEnabled(CommandLine.SESSION)) {
-                            Path sessionPath =
-                                    SessionUtils.getSessionPath(
-                                            getArgs().getArgument(CommandLine.SESSION));
-                            if (!Files.exists(sessionPath)) {
+                            String path = getArgs().getArgument(CommandLine.SESSION);
+                            Path sessionPath = null;
+                            try {
+                                sessionPath = SessionUtils.getSessionPath(path);
+                            } catch (IllegalArgumentException e) {
+                                logger.warn(
+                                        "An error occurred while resolving the session path:", e);
+                            }
+
+                            if (sessionPath == null) {
+                                view.showWarningDialog(
+                                        Constant.messages.getString(
+                                                "start.gui.cmdline.session.path.invalid", path));
+                            } else if (!Files.exists(sessionPath)) {
                                 view.showWarningDialog(
                                         Constant.messages.getString(
                                                 "start.gui.cmdline.session.does.not.exist",
@@ -267,10 +276,20 @@ public class GuiBootstrap extends ZapBootstrap {
                             }
 
                         } else if (getArgs().isEnabled(CommandLine.NEW_SESSION)) {
-                            Path sessionPath =
-                                    SessionUtils.getSessionPath(
-                                            getArgs().getArgument(CommandLine.NEW_SESSION));
-                            if (Files.exists(sessionPath)) {
+                            String path = getArgs().getArgument(CommandLine.NEW_SESSION);
+                            Path sessionPath = null;
+                            try {
+                                sessionPath = SessionUtils.getSessionPath(path);
+                            } catch (IllegalArgumentException e) {
+                                logger.warn(
+                                        "An error occurred while resolving the session path:", e);
+                            }
+
+                            if (sessionPath == null) {
+                                view.showWarningDialog(
+                                        Constant.messages.getString(
+                                                "start.gui.cmdline.session.path.invalid", path));
+                            } else if (Files.exists(sessionPath)) {
                                 view.showWarningDialog(
                                         Constant.messages.getString(
                                                 "start.gui.cmdline.newsession.already.exist",
@@ -340,6 +359,8 @@ public class GuiBootstrap extends ZapBootstrap {
         }
         lookAndFeelSet = true;
 
+        UIManager.addAuxiliaryLookAndFeel(new ZapLookAndFeel());
+
         if (Constant.isMacOsX()) {
             OsXGui.setup();
         } else if (Constant.isWindows()) {
@@ -385,7 +406,7 @@ public class GuiBootstrap extends ZapBootstrap {
                     | ClassNotFoundException
                     | InstantiationException
                     | IllegalAccessException e) {
-                logger.warn("Failed to set the look and feel: " + e.getMessage());
+                logger.warn("Failed to set the look and feel: {}", e.getMessage());
             }
         }
         return false;
@@ -504,14 +525,6 @@ public class GuiBootstrap extends ZapBootstrap {
         }
 
         return localeBuilder.build();
-    }
-
-    private static void promptForProxyDetailsIfNeeded(OptionsParam options) {
-        if (options.getConnectionParam().isProxyChainPrompt()) {
-            final ProxyDialog dialog = new ProxyDialog(null, true);
-            dialog.init(options);
-            dialog.setVisible(true);
-        }
     }
 
     /**

@@ -70,6 +70,11 @@
 // ZAP: 2020/11/17 Use new TechSet#getAllTech().
 // ZAP: 2020/11/26 Use Log4j2 getLogger() and deprecate Log4j1.x.
 // ZAP: 2021/07/20 Correct message updated with the scan rule ID header (Issue 6689).
+// ZAP: 2022/06/11 Add functionality for custom pages AUTHN/AUTHZ handling.
+// ZAP: 2022/06/05 Remove usage of HttpException.
+// ZAP: 2022/08/03 Keep enabled state when setting default alert threshold (Issue 7400).
+// ZAP: 2022/09/08 Use format specifiers instead of concatenation when logging.
+// ZAP: 2022/09/28 Do not set the Content-Length header when the method does not require one.
 package org.parosproxy.paros.core.scanner;
 
 import java.io.IOException;
@@ -83,7 +88,7 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.parosproxy.paros.control.Control;
@@ -91,6 +96,7 @@ import org.parosproxy.paros.core.scanner.Alert.Source;
 import org.parosproxy.paros.model.HistoryReference;
 import org.parosproxy.paros.network.HttpHeader;
 import org.parosproxy.paros.network.HttpMessage;
+import org.parosproxy.paros.network.HttpRequestHeader;
 import org.parosproxy.paros.network.HttpStatusCode;
 import org.zaproxy.zap.control.AddOn;
 import org.zaproxy.zap.extension.anticsrf.ExtensionAntiCSRF;
@@ -209,7 +215,6 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
      * </ul>
      *
      * @param message the message to be sent and received
-     * @throws HttpException if a HTTP error occurred
      * @throws IOException if an I/O error occurred (for example, read time out)
      * @see #sendAndReceive(HttpMessage, boolean)
      * @see #sendAndReceive(HttpMessage, boolean, boolean)
@@ -236,7 +241,6 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
      * @param message the message to be sent and received
      * @param isFollowRedirect {@code true} if redirections should be followed, {@code false}
      *     otherwise
-     * @throws HttpException if a HTTP error occurred
      * @throws IOException if an I/O error occurred (for example, read time out)
      * @see #sendAndReceive(HttpMessage)
      * @see #sendAndReceive(HttpMessage, boolean, boolean)
@@ -266,7 +270,6 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
      *     otherwise
      * @param handleAntiCSRF {@code true} if the anti-CSRF token present in the request should be
      *     handled/regenerated, {@code false} otherwise
-     * @throws HttpException if a HTTP error occurred
      * @throws IOException if an I/O error occurred (for example, read time out)
      * @see #sendAndReceive(HttpMessage)
      * @see #sendAndReceive(HttpMessage, boolean)
@@ -296,7 +299,8 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
         // always get the fresh copy
         message.getRequestHeader().setHeader(HttpHeader.IF_MODIFIED_SINCE, null);
         message.getRequestHeader().setHeader(HttpHeader.IF_NONE_MATCH, null);
-        message.getRequestHeader().setContentLength(message.getRequestBody().length());
+
+        updateRequestContentLength(message);
 
         if (this.getDelayInMs() > 0) {
             try {
@@ -320,6 +324,30 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
 
         // ZAP: Set the history reference back and run the "afterScan" methods of any ScannerHooks
         parent.performScannerHookAfterScan(message, this);
+    }
+
+    /**
+     * Updates the Content-Length header of the request.
+     *
+     * <p>For methods with absent or unanticipated enclosed content, the header is removed otherwise
+     * in all other cases the header is updated to match the length of the content.
+     *
+     * @param message the message to update.
+     * @since 2.12.0
+     */
+    protected void updateRequestContentLength(HttpMessage message) {
+        int bodyLength = message.getRequestBody().length();
+        String method = message.getRequestHeader().getMethod();
+        if (bodyLength == 0
+                && (HttpRequestHeader.GET.equalsIgnoreCase(method)
+                        || HttpRequestHeader.CONNECT.equalsIgnoreCase(method)
+                        || HttpRequestHeader.DELETE.equalsIgnoreCase(method)
+                        || HttpRequestHeader.HEAD.equalsIgnoreCase(method)
+                        || HttpRequestHeader.TRACE.equalsIgnoreCase(method))) {
+            message.getRequestHeader().setHeader(HttpHeader.CONTENT_LENGTH, null);
+            return;
+        }
+        message.getRequestHeader().setContentLength(bodyLength);
     }
 
     @Override
@@ -682,6 +710,22 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
     }
 
     /**
+     * Tells whether or not the message matches {@code CustomPage.Type.AUTH_4XX} definitions. Checks
+     * if the message matches {@code CustomPage.Type.OK_200} first, in case the user is trying to
+     * override something.
+     *
+     * @param msg the message that will be checked
+     * @return {@code true} if the message matches, {@code false} otherwise
+     * @since 2.12.0
+     */
+    protected boolean isPageAuthIssue(HttpMessage msg) {
+        if (isCustomPage(msg, CustomPage.Type.OK_200)) {
+            return false;
+        }
+        return isCustomPage(msg, CustomPage.Type.AUTH_4XX);
+    }
+
+    /**
      * Tells whether or not the response has a status code between 200 and 299 (inclusive), or
      * {@code CustomPage.Type.OK_200} and {@code Analyser#isFileExist(HttpMessage)}. Checks if the
      * message matches {@code CustomPage.Type.NOTFOUND_404} or {@code CustomPage.Type.ERROR_500}
@@ -834,8 +878,13 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
 
     @Override
     public void setDefaultAlertThreshold(AlertThreshold level) {
+        AlertThreshold oldDefaultAlertThreshold = defaultAttackThreshold;
         this.defaultAttackThreshold = level;
-        setEnabledFromLevel();
+        if ((defaultAttackThreshold == AlertThreshold.OFF
+                        || oldDefaultAlertThreshold == AlertThreshold.OFF)
+                && getAlertThreshold(true) == AlertThreshold.DEFAULT) {
+            setEnabled(defaultAttackThreshold != AlertThreshold.OFF);
+        }
     }
 
     private void setEnabledFromLevel() {
@@ -1297,6 +1346,19 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
     }
 
     /**
+     * Gets the name of the scan rule, falling back to the simple name of the class as last resort.
+     *
+     * @return a name representing the scan rule.
+     * @since 2.12.0
+     */
+    @Override
+    public final String getDisplayName() {
+        return StringUtils.isBlank(this.getName())
+                ? this.getClass().getSimpleName()
+                : this.getName();
+    }
+
+    /**
      * Returns a new alert builder.
      *
      * <p>By default the alert builder sets the following fields of the alert:
@@ -1472,6 +1534,30 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
             return this;
         }
 
+        @Override
+        public AlertBuilder addTag(String tag) {
+            super.addTag(tag);
+            return this;
+        }
+
+        @Override
+        public AlertBuilder addTag(String tag, String value) {
+            super.addTag(tag, value);
+            return this;
+        }
+
+        @Override
+        public AlertBuilder removeTag(String tag) {
+            super.removeTag(tag);
+            return this;
+        }
+
+        @Override
+        public AlertBuilder removeTag(String tag, String value) {
+            super.removeTag(tag, value);
+            return this;
+        }
+
         /**
          * Raises the alert with specified data.
          *
@@ -1484,15 +1570,11 @@ public abstract class AbstractPlugin implements Plugin, Comparable<Object> {
             }
 
             Alert alert = build();
-            if (plugin.logger.isDebugEnabled()) {
-                plugin.logger.debug(
-                        "New alert pluginid="
-                                + alert.getPluginId()
-                                + " "
-                                + alert.getName()
-                                + " uri="
-                                + alert.getUri());
-            }
+            plugin.logger.debug(
+                    "New alert pluginid={} {} uri={}",
+                    alert.getPluginId(),
+                    alert.getName(),
+                    alert.getUri());
             plugin.parent.alertFound(alert);
         }
     }

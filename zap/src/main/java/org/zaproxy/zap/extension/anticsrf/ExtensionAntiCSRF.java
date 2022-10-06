@@ -234,10 +234,9 @@ public class ExtensionAntiCSRF extends ExtensionAdaptor implements SessionChange
 
     public void registerAntiCsrfToken(AntiCsrfToken token) {
         log.debug(
-                "registerAntiCsrfToken "
-                        + token.getMsg().getRequestHeader().getURI().toString()
-                        + " "
-                        + token.getValue());
+                "registerAntiCsrfToken {} {}",
+                token.getMsg().getRequestHeader().getURI(),
+                token.getValue());
         synchronized (valueToToken) {
             try {
                 HistoryReference hRef = token.getMsg().getHistoryRef();
@@ -352,7 +351,7 @@ public class ExtensionAntiCSRF extends ExtensionAdaptor implements SessionChange
 
         if (formElements != null && formElements.size() > 0) {
             // Loop through all of the FORM tags
-            log.debug("Found " + formElements.size() + " forms");
+            log.debug("Found {} forms", formElements.size());
             int formIndex = 0;
 
             for (Element formElement : formElements) {
@@ -360,7 +359,7 @@ public class ExtensionAntiCSRF extends ExtensionAdaptor implements SessionChange
 
                 if (inputElements != null && inputElements.size() > 0) {
                     // Loop through all of the INPUT elements
-                    log.debug("Found " + inputElements.size() + " inputs");
+                    log.debug("Found {} inputs", inputElements.size());
                     for (Element inputElement : inputElements) {
                         String value = inputElement.getAttributeValue("VALUE");
                         if (value == null) {
@@ -492,7 +491,25 @@ public class ExtensionAntiCSRF extends ExtensionAdaptor implements SessionChange
      * @since 2.7.0
      */
     public String generateForm(HttpMessage msg) throws UnsupportedEncodingException {
+        return generateForm(msg, "");
+    }
+
+    /**
+     * Generates a HTML form from the given message, replacing the action with the specified action
+     * URL.
+     *
+     * @param msg the message used to generate the HTML form, must not be {@code null}.
+     * @param actionUrl optional parameter
+     * @return a string containing the HTML form, never {@code null}.
+     * @throws UnsupportedEncodingException if an error occurred while encoding the values of the
+     *     form.
+     */
+    String generateForm(HttpMessage msg, String actionUrl) throws UnsupportedEncodingException {
+
         String requestUri = msg.getRequestHeader().getURI().toString();
+        if (!actionUrl.isEmpty()) {
+            requestUri = actionUrl;
+        }
         StringBuilder sb = new StringBuilder(300);
         sb.append("<html>\n");
         sb.append("<body>\n");
@@ -576,11 +593,12 @@ public class ExtensionAntiCSRF extends ExtensionAdaptor implements SessionChange
 
         if (tokenValue != null) {
             // Replace token value - only supported in the body right now
-            log.debug(
-                    "regenerateAntiCsrfToken replacing "
-                            + antiCsrfToken.getValue()
-                            + " with "
-                            + getURLEncode(tokenValue));
+            if (log.isDebugEnabled()) {
+                log.debug(
+                        "regenerateAntiCsrfToken replacing {} with {}",
+                        antiCsrfToken.getValue(),
+                        getURLEncode(tokenValue));
+            }
             String replaced = message.getRequestBody().toString();
             replaced =
                     replaced.replace(

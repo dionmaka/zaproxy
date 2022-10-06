@@ -116,6 +116,8 @@
 // ZAP: 2021/10/06 Update user agent when upgrading from 2.10
 // ZAP: 2022/02/03 Removed deprecated FILE_CONFIG_DEFAULT and VULNS_BASE
 // ZAP: 2022/02/25 Remove options that are no longer needed.
+// ZAP: 2022/05/20 Remove usage of ConnectionParam.
+// ZAP: 2022/09/21 Use format specifiers instead of concatenation when logging.
 package org.parosproxy.paros;
 
 import java.io.File;
@@ -156,7 +158,6 @@ import org.apache.logging.log4j.core.config.Configurator;
 import org.parosproxy.paros.extension.option.OptionsParamView;
 import org.parosproxy.paros.model.FileCopier;
 import org.parosproxy.paros.model.Model;
-import org.parosproxy.paros.network.ConnectionParam;
 import org.zaproxy.zap.ZAP;
 import org.zaproxy.zap.control.AddOnLoader;
 import org.zaproxy.zap.control.ControlOverrides;
@@ -192,7 +193,6 @@ public final class Constant {
 
     // Old version numbers - for upgrade
     private static final long V_2_11_1_TAG = 20011001;
-    private static final long V_2_10_0_TAG = 20010000;
     private static final long V_2_9_0_TAG = 2009000;
     private static final long V_2_8_0_TAG = 2008000;
     private static final long V_2_7_0_TAG = 2007000;
@@ -455,7 +455,7 @@ public final class Constant {
                 && oldf.exists()
                 && Paths.get(zapHome).equals(Paths.get(getDefaultHomeDirectory(true)))) {
             // Dont copy old configs if forcedReset or they've specified a non std directory
-            LOG.info("Copying defaults from " + oldf.getAbsolutePath() + " to " + FILE_CONFIG);
+            LOG.info("Copying defaults from {} to {}", oldf.getAbsolutePath(), FILE_CONFIG);
             copier.copy(oldf, f);
 
             if (isDevMode() || isDailyBuild()) {
@@ -465,7 +465,7 @@ public final class Constant {
                 newConfig.save();
             }
         } else {
-            LOG.info("Copying default configuration to " + FILE_CONFIG);
+            LOG.info("Copying default configuration to {}", FILE_CONFIG);
             copyDefaultConfigFile();
         }
     }
@@ -579,7 +579,7 @@ public final class Constant {
 
             f = new File(FOLDER_SESSION);
             if (!f.isDirectory()) {
-                LOG.info("Creating directory " + FOLDER_SESSION);
+                LOG.info("Creating directory {}", FOLDER_SESSION);
                 if (!f.mkdir()) {
                     // ZAP: report failure to create directory
                     System.out.println("Failed to create directory " + f.getAbsolutePath());
@@ -587,7 +587,7 @@ public final class Constant {
             }
             f = new File(DIRBUSTER_CUSTOM_DIR);
             if (!f.isDirectory()) {
-                LOG.info("Creating directory " + DIRBUSTER_CUSTOM_DIR);
+                LOG.info("Creating directory {}", DIRBUSTER_CUSTOM_DIR);
                 if (!f.mkdir()) {
                     // ZAP: report failure to create directory
                     System.out.println("Failed to create directory " + f.getAbsolutePath());
@@ -595,7 +595,7 @@ public final class Constant {
             }
             f = new File(FUZZER_DIR);
             if (!f.isDirectory()) {
-                LOG.info("Creating directory " + FUZZER_DIR);
+                LOG.info("Creating directory {}", FUZZER_DIR);
                 if (!f.mkdir()) {
                     // ZAP: report failure to create directory
                     System.out.println("Failed to create directory " + f.getAbsolutePath());
@@ -603,7 +603,7 @@ public final class Constant {
             }
             f = new File(FOLDER_LOCAL_PLUGIN);
             if (!f.isDirectory()) {
-                LOG.info("Creating directory " + FOLDER_LOCAL_PLUGIN);
+                LOG.info("Creating directory {}", FOLDER_LOCAL_PLUGIN);
                 if (!f.mkdir()) {
                     // ZAP: report failure to create directory
                     System.out.println("Failed to create directory " + f.getAbsolutePath());
@@ -633,7 +633,7 @@ public final class Constant {
                     // Nothing to do
                 } else {
                     // Backup the old one
-                    LOG.info("Backing up config file to " + FILE_CONFIG + ".bak");
+                    LOG.info("Backing up config file to {}.bak", FILE_CONFIG);
                     f = new File(FILE_CONFIG);
                     try {
                         copier.copy(f, new File(FILE_CONFIG + ".bak"));
@@ -704,9 +704,6 @@ public final class Constant {
                     if (ver <= V_2_9_0_TAG) {
                         upgradeFrom2_9_0(config);
                     }
-                    if (ver <= V_2_10_0_TAG) {
-                        upgradeFrom2_10_0(config);
-                    }
                     if (ver <= V_2_11_1_TAG) {
                         upgradeFrom2_11_1(config);
                     }
@@ -714,7 +711,7 @@ public final class Constant {
                     // Execute always to pick installer choices.
                     updateCfuFromDefaultConfig(config);
 
-                    LOG.info("Upgraded from " + ver);
+                    LOG.info("Upgraded from {}", ver);
 
                     setLatestVersion(config);
                 }
@@ -1015,8 +1012,7 @@ public final class Constant {
             }
         } catch (ConversionException e) {
             LOG.debug(
-                    "The option " + OptionsParamCheckForUpdates.CHECK_ON_START + " is not an int.",
-                    e);
+                    "The option {} is not an int.", OptionsParamCheckForUpdates.CHECK_ON_START, e);
         }
         // Clear the block list - addons were incorrectly added to this if an update failed
         config.setProperty(AddOnLoader.ADDONS_BLOCK_LIST, "");
@@ -1029,9 +1025,8 @@ public final class Constant {
             config.setProperty(OptionsParamCheckForUpdates.CHECK_ON_START, oldValue != 0);
         } catch (ConversionException e) {
             LOG.debug(
-                    "The option "
-                            + OptionsParamCheckForUpdates.CHECK_ON_START
-                            + " is no longer an int.",
+                    "The option {} is no longer an int.",
+                    OptionsParamCheckForUpdates.CHECK_ON_START,
                     e);
         }
     }
@@ -1111,14 +1106,11 @@ public final class Constant {
             int oldValue = config.getInt(certUseKey, 0);
             config.setProperty(certUseKey, oldValue != 0);
         } catch (ConversionException e) {
-            LOG.debug("The option " + certUseKey + " is no longer an int.", e);
+            LOG.debug("The option {} is no longer an int.", certUseKey, e);
         }
     }
 
     private static void upgradeFrom2_8_0(XMLConfiguration config) {
-        // Update to a newer default user agent
-        config.setProperty(
-                ConnectionParam.DEFAULT_USER_AGENT, ConnectionParam.DEFAULT_DEFAULT_USER_AGENT);
         updatePscanTagMailtoPattern(config);
     }
 
@@ -1135,20 +1127,11 @@ public final class Constant {
                                 config.clearProperty(key);
                             }
                         });
-        // Update to a newer default user agent
-        config.setProperty(
-                ConnectionParam.DEFAULT_USER_AGENT, ConnectionParam.DEFAULT_DEFAULT_USER_AGENT);
         // Use new Look and Feel
         config.setProperty(
                 OptionsParamView.LOOK_AND_FEEL, OptionsParamView.DEFAULT_LOOK_AND_FEEL_NAME);
         config.setProperty(
                 OptionsParamView.LOOK_AND_FEEL_CLASS, OptionsParamView.DEFAULT_LOOK_AND_FEEL_CLASS);
-    }
-
-    private static void upgradeFrom2_10_0(XMLConfiguration config) {
-        // Update to a newer default user agent
-        config.setProperty(
-                ConnectionParam.DEFAULT_USER_AGENT, ConnectionParam.DEFAULT_DEFAULT_USER_AGENT);
     }
 
     private static void upgradeFrom2_11_1(XMLConfiguration config) {

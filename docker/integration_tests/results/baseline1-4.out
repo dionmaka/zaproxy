@@ -1,6 +1,6 @@
 Using the Automation Framework
 Total of 4 URLs
-PASS: Vulnerable JS Library [10003]
+PASS: Vulnerable JS Library (Powered by Retire.js) [10003]
 PASS: Cookie No HttpOnly Flag [10010]
 PASS: Cookie Without Secure Flag [10011]
 PASS: Cross-Domain JavaScript Source File Inclusion [10017]
@@ -61,9 +61,8 @@ WARN-NEW: Server Leaks Version Information via "Server" HTTP Response Header Fie
 	https://www.example.com/ (200 OK)
 	https://www.example.com/robots.txt (404 Not Found)
 	https://www.example.com/sitemap.xml (404 Not Found)
-WARN-NEW: Content Security Policy (CSP) Header Not Set [10038] x 3 
+WARN-NEW: Content Security Policy (CSP) Header Not Set [10038] x 2 
 	https://www.example.com/ (200 OK)
-	https://www.example.com/robots.txt (404 Not Found)
 	https://www.example.com/sitemap.xml (404 Not Found)
 WARN-NEW: Retrieved from Cache [10050] x 3 
 	https://www.example.com/ (200 OK)

@@ -51,11 +51,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeNode;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdesktop.swingx.JXTable;
 import org.parosproxy.paros.CommandLine;
 import org.parosproxy.paros.Constant;
+import org.parosproxy.paros.control.Control;
 import org.parosproxy.paros.control.Control.Mode;
 import org.parosproxy.paros.extension.CommandLineArgument;
 import org.parosproxy.paros.extension.CommandLineListener;
@@ -294,10 +296,9 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
      */
     public void registerScriptEngineWrapper(ScriptEngineWrapper wrapper) {
         logger.debug(
-                "registerEngineWrapper "
-                        + wrapper.getLanguageName()
-                        + " : "
-                        + wrapper.getEngineName());
+                "registerEngineWrapper {} : {}",
+                wrapper.getLanguageName(),
+                wrapper.getEngineName());
         this.engineWrappers.add(wrapper);
 
         setScriptEngineWrapper(getTreeModel().getScriptsNode(), wrapper, wrapper);
@@ -429,10 +430,9 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
      */
     public void removeScriptEngineWrapper(ScriptEngineWrapper wrapper) {
         logger.debug(
-                "Removing script engine: "
-                        + wrapper.getLanguageName()
-                        + " : "
-                        + wrapper.getEngineName());
+                "Removing script engine: {} : {}",
+                wrapper.getLanguageName(),
+                wrapper.getEngineName());
         if (this.engineWrappers.remove(wrapper)) {
             if (scriptUI != null) {
                 try {
@@ -583,11 +583,10 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                 addScript(script, false, false);
             } catch (MalformedInputException e) {
                 logger.warn(
-                        "Failed to add script \""
-                                + script.getName()
-                                + "\", contains invalid character sequence (UTF-8).");
+                        "Failed to add script \"{}\", contains invalid character sequence (UTF-8).",
+                        script.getName());
             } catch (InvalidParameterException | IOException e) {
-                logger.error("Failed to add script: " + script.getName(), e);
+                logger.error("Failed to add script: {}", script.getName(), e);
             }
         }
     }
@@ -659,11 +658,11 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
         if (script.hasChangedOnDisk() && !script.isChanged()) {
             try {
                 logger.debug(
-                        "Reloading script as its been changed on disk "
-                                + script.getFile().getAbsolutePath());
+                        "Reloading script as its been changed on disk {}",
+                        script.getFile().getAbsolutePath());
                 script.reloadScript();
             } catch (IOException e) {
-                logger.error("Failed to reload script " + script.getFile().getAbsolutePath(), e);
+                logger.error("Failed to reload script {}", script.getFile().getAbsolutePath(), e);
             }
         }
     }
@@ -724,12 +723,10 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
         String classname = listener.getClass().getCanonicalName();
         String scriptName = script.getName();
         logger.error(
-                "Error while notifying '"
-                        + classname
-                        + "' with script '"
-                        + scriptName
-                        + "', cause: "
-                        + e.getMessage(),
+                "Error while notifying '{}' with script '{}', cause: {}",
+                classname,
+                scriptName,
+                e.getMessage(),
                 e);
     }
 
@@ -808,13 +805,10 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                 }
                 if (ecmaScriptEngineWrapper != null) {
                     logger.info(
-                            "Changing ["
-                                    + script.getName()
-                                    + "] (ECMAScript) script engine from ["
-                                    + script.getEngineName()
-                                    + "] to ["
-                                    + ecmaScriptEngineWrapper.getEngineName()
-                                    + "].");
+                            "Changing [{}] (ECMAScript) script engine from [{}] to [{}].",
+                            script.getName(),
+                            script.getEngineName(),
+                            ecmaScriptEngineWrapper.getEngineName());
                     script.setEngine(ecmaScriptEngineWrapper);
                 }
             }
@@ -825,12 +819,10 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                     this.addScript(script, false, false);
                 } else {
                     logger.warn(
-                            "Failed to add script \""
-                                    + script.getName()
-                                    + "\", provided script type \""
-                                    + script.getTypeName()
-                                    + "\" not found, available: "
-                                    + getScriptTypesNames());
+                            "Failed to add script \"{}\", provided script type \"{}\" not found, available: {}",
+                            script.getName(),
+                            script.getTypeName(),
+                            getScriptTypesNames());
                     scriptsNotAdded.add(
                             new String[] {
                                 script.getName(),
@@ -843,9 +835,8 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
 
             } catch (MalformedInputException e) {
                 logger.warn(
-                        "Failed to add script \""
-                                + script.getName()
-                                + "\", contains invalid character sequence (UTF-8).");
+                        "Failed to add script \"{}\", contains invalid character sequence (UTF-8).",
+                        script.getName());
                 scriptsNotAdded.add(
                         new String[] {
                             script.getName(),
@@ -871,7 +862,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
         for (File dir : this.getScriptParam().getScriptDirs()) {
             // Load the scripts from subdirectories of each directory configured
             int numAdded = addScriptsFromDir(dir);
-            logger.debug("Added " + numAdded + " scripts from dir: " + dir.getAbsolutePath());
+            logger.debug("Added {} scripts from dir: {}", numAdded, dir.getAbsolutePath());
         }
         shouldLoadScriptsOnScriptTypeRegistration = true;
 
@@ -883,7 +874,8 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                     Files.createDirectories(scriptTypeDir);
                 } catch (IOException e) {
                     logger.warn(
-                            "Failed to create directory for script type: " + scriptType.getName(),
+                            "Failed to create directory for script type: {}",
+                            scriptType.getName(),
                             e);
                 }
             }
@@ -1007,7 +999,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
      * @see #removeScriptsFromDir(File)
      */
     public int addScriptsFromDir(File dir) {
-        logger.debug("Adding scripts from dir: " + dir.getAbsolutePath());
+        logger.debug("Adding scripts from dir: {}", dir.getAbsolutePath());
         trackedDirs.add(dir);
         int addedScripts = 0;
         for (ScriptType type : this.getScriptTypes()) {
@@ -1038,7 +1030,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                     try {
                         if (f.canWrite()) {
                             String scriptName = this.getUniqueScriptName(f.getName(), ext);
-                            logger.debug("Loading script " + scriptName);
+                            logger.debug("Loading script {}", scriptName);
                             ScriptWrapper sw =
                                     new ScriptWrapper(
                                             scriptName,
@@ -1052,7 +1044,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                         } else {
                             // Cant write so add as a template
                             String scriptName = this.getUniqueTemplateName(f.getName(), ext);
-                            logger.debug("Loading script " + scriptName);
+                            logger.debug("Loading script {}", scriptName);
                             ScriptWrapper sw =
                                     new ScriptWrapper(
                                             scriptName,
@@ -1069,7 +1061,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                         logger.error(e.getMessage(), e);
                     }
                 } else {
-                    logger.debug("Ignoring " + f.getName());
+                    logger.debug("Ignoring {}", f.getName());
                 }
             }
         }
@@ -1088,7 +1080,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
      * @see #addScriptsFromDir(File)
      */
     public int removeScriptsFromDir(File dir) {
-        logger.debug("Removing scripts from dir: " + dir.getAbsolutePath());
+        logger.debug("Removing scripts from dir: {}", dir.getAbsolutePath());
         trackedDirs.remove(dir);
         int removedScripts = 0;
 
@@ -1306,17 +1298,12 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
                 throw e;
             }
 
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        "Failed to load script ["
-                                + script.getName()
-                                + "] using ["
-                                + DEFAULT_CHARSET
-                                + "], falling back to ["
-                                + Charset.defaultCharset()
-                                + "].",
-                        e);
-            }
+            logger.debug(
+                    "Failed to load script [{}] using [{}], falling back to [{}].",
+                    script.getName(),
+                    DEFAULT_CHARSET,
+                    Charset.defaultCharset(),
+                    e);
             return loadScript(script, Charset.defaultCharset());
         }
     }
@@ -1431,7 +1418,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
      * @see Invocable
      */
     public Invocable invokeScript(ScriptWrapper script) throws ScriptException {
-        logger.debug("invokeScript " + script.getName());
+        logger.debug("invokeScript {}", script.getName());
         preInvokeScript(script);
 
         ClassLoader previousContextClassLoader = Thread.currentThread().getContextClassLoader();
@@ -1493,8 +1480,18 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
         Writer writer = getWriters(script);
         se.getContext().setWriter(writer);
 
+        String scriptName = script.getName();
+        se.getContext().setAttribute(ScriptEngine.FILENAME, scriptName, ScriptContext.ENGINE_SCOPE);
         // Set the script name as a context attribute - this is used for script level variables
-        se.getContext().setAttribute(SCRIPT_NAME_ATT, script.getName(), ScriptContext.ENGINE_SCOPE);
+        se.getContext().setAttribute(SCRIPT_NAME_ATT, scriptName, ScriptContext.ENGINE_SCOPE);
+
+        se.put("control", Control.getSingleton());
+        se.put("model", getModel());
+
+        if (hasView()) {
+            se.put("view", getView());
+        }
+
         reloadIfChangedOnDisk(script);
         recordScriptCalledStats(script);
 
@@ -1527,7 +1524,7 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
      * @see Invocable
      */
     public Invocable invokeScriptWithOutAddOnLoader(ScriptWrapper script) throws ScriptException {
-        logger.debug("invokeScriptWithOutAddOnLoader " + script.getName());
+        logger.debug("invokeScriptWithOutAddOnLoader {}", script.getName());
         preInvokeScript(script);
 
         return invokeScriptImpl(script);
@@ -1701,10 +1698,8 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
         try {
             writer.append(errorMessage);
         } catch (IOException e) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Failed to append script error message because of an exception:", e);
-            }
-            logger.warn("Failed to append error message: " + errorMessage);
+            logger.debug("Failed to append script error message because of an exception:", e);
+            logger.warn("Failed to append error message: {}", errorMessage);
         }
         this.setError(script, errorMessage);
         this.setEnabled(script, false);
@@ -1868,7 +1863,8 @@ public class ExtensionScript extends ExtensionAdaptor implements CommandLineList
 
     public void setError(ScriptWrapper script, Exception e) {
         script.setLastException(e);
-        setError(script, e.getMessage());
+        String message = e.getMessage();
+        setError(script, message != null ? message : ExceptionUtils.getRootCauseMessage(e));
     }
 
     public void addListener(ScriptEventListener listener) {

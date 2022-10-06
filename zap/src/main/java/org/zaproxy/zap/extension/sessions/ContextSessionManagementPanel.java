@@ -39,10 +39,12 @@ import org.zaproxy.zap.session.AbstractSessionManagementMethodOptionsPanel;
 import org.zaproxy.zap.session.SessionManagementMethod;
 import org.zaproxy.zap.session.SessionManagementMethodType;
 import org.zaproxy.zap.utils.FontUtils;
+import org.zaproxy.zap.utils.ZapHtmlLabel;
 import org.zaproxy.zap.view.AbstractContextPropertiesPanel;
 import org.zaproxy.zap.view.LayoutHelper;
 
 /** The Context Panel shown for configuring a Context's session management method. */
+@SuppressWarnings("serial")
 public class ContextSessionManagementPanel extends AbstractContextPropertiesPanel {
 
     /** The Constant PANEL NAME. */
@@ -95,7 +97,7 @@ public class ContextSessionManagementPanel extends AbstractContextPropertiesPane
         this.setBorder(new EmptyBorder(2, 2, 2, 2));
 
         this.add(
-                new JLabel(
+                new ZapHtmlLabel(
                         Constant.messages.getString("sessionmanagement.panel.label.description")),
                 LayoutHelper.getGBC(0, 0, 1, 1.0D));
 
@@ -138,7 +140,7 @@ public class ContextSessionManagementPanel extends AbstractContextPropertiesPane
             return;
         }
 
-        log.debug("Creating new panel for configuring: " + newMethodType.getName());
+        log.debug("Creating new panel for configuring: {}", newMethodType.getName());
         this.getConfigContainerPanel().removeAll();
 
         // show the panel according to whether the session management type needs configuration
@@ -149,7 +151,7 @@ public class ContextSessionManagementPanel extends AbstractContextPropertiesPane
             this.shownConfigPanel = null;
             getConfigContainerPanel()
                     .add(
-                            new JLabel("<html><p>" + CONFIG_NOT_NEEDED + "</p></html>"),
+                            new ZapHtmlLabel("<html><p>" + CONFIG_NOT_NEEDED + "</p></html>"),
                             BorderLayout.CENTER);
         }
         this.shownMethodType = newMethodType;
@@ -178,7 +180,7 @@ public class ContextSessionManagementPanel extends AbstractContextPropertiesPane
                         public void itemStateChanged(ItemEvent e) {
                             if (e.getStateChange() == ItemEvent.SELECTED) {
                                 // Prepare the new session management method
-                                log.debug("Selected new Session Management type: " + e.getItem());
+                                log.debug("Selected new Session Management type: {}", e.getItem());
                                 SessionManagementMethodType type =
                                         ((SessionManagementMethodType) e.getItem());
 
@@ -229,12 +231,10 @@ public class ContextSessionManagementPanel extends AbstractContextPropertiesPane
     @Override
     public void initContextData(Session session, Context uiSharedContext) {
         selectedMethod = uiSharedContext.getSessionManagementMethod();
-        if (log.isDebugEnabled())
-            log.debug(
-                    "Initializing configuration panel for session management method: "
-                            + selectedMethod
-                            + " for context "
-                            + uiSharedContext.getName());
+        log.debug(
+                "Initializing configuration panel for session management method: {}  for context {}",
+                selectedMethod,
+                uiSharedContext.getName());
 
         // If something was already configured, find the type and set the UI accordingly
         if (selectedMethod != null) {

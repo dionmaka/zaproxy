@@ -100,7 +100,8 @@ public class CommandLineBootstrap extends HeadlessBootstrap {
                     rc = 1;
                 }
             }
-
+        } catch (ShutdownRequestedException e) {
+            rc = 1;
         } catch (final Exception e) {
             logger.error(e.getMessage(), e);
             System.out.println(e.getMessage());
@@ -112,7 +113,7 @@ public class CommandLineBootstrap extends HeadlessBootstrap {
         } finally {
             control.shutdown(
                     Model.getSingleton().getOptionsParam().getDatabaseParam().isCompactDatabase());
-            logger.info(Constant.PROGRAM_TITLE + " terminated.");
+            logger.info("{} terminated.", Constant.PROGRAM_TITLE);
         }
         if (rc == 0) {
             rc = control.getExitStatus();

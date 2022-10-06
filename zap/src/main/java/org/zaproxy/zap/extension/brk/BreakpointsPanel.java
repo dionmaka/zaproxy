@@ -38,6 +38,7 @@ import org.parosproxy.paros.Constant;
 import org.parosproxy.paros.extension.AbstractPanel;
 import org.parosproxy.paros.view.View;
 
+@SuppressWarnings("serial")
 public class BreakpointsPanel extends AbstractPanel {
 
     private static final long serialVersionUID = 1L;
@@ -294,15 +295,8 @@ public class BreakpointsPanel extends AbstractPanel {
 
     private void saveColumnWidth(String prefix, int width) {
         if (width > 0) {
-            if (log.isDebugEnabled())
-                log.debug(
-                        "Saving preference "
-                                + prefnzPrefix
-                                + prefix
-                                + "."
-                                + PREF_COLUMN_WIDTH
-                                + "="
-                                + width);
+            log.debug(
+                    "Saving preference {}{}.{}={}", prefnzPrefix, prefix, PREF_COLUMN_WIDTH, width);
             this.preferences.put(
                     prefnzPrefix + prefix + "." + PREF_COLUMN_WIDTH, Integer.toString(width));
             // immediate flushing
@@ -327,15 +321,12 @@ public class BreakpointsPanel extends AbstractPanel {
             }
             if (width > 0) {
                 result = width;
-                if (log.isDebugEnabled())
-                    log.debug(
-                            "Restoring preference "
-                                    + prefnzPrefix
-                                    + prefix
-                                    + "."
-                                    + PREF_COLUMN_WIDTH
-                                    + "="
-                                    + width);
+                log.debug(
+                        "Restoring preference {}{}.{}={}",
+                        prefnzPrefix,
+                        prefix,
+                        PREF_COLUMN_WIDTH,
+                        width);
             }
         }
         return result;
@@ -355,14 +346,7 @@ public class BreakpointsPanel extends AbstractPanel {
         public void propertyChange(PropertyChangeEvent evt) {
             TableColumn column = (TableColumn) evt.getSource();
             if (column != null) {
-                if (log.isDebugEnabled())
-                    log.debug(
-                            prefnzPrefix
-                                    + prefix
-                                    + "."
-                                    + PREF_COLUMN_WIDTH
-                                    + "="
-                                    + column.getWidth());
+                log.debug("{}{}.{}={}", prefnzPrefix, prefix, PREF_COLUMN_WIDTH, column.getWidth());
                 saveColumnWidth(prefix, column.getWidth());
             }
         }

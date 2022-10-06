@@ -1,6 +1,6 @@
 Using the Automation Framework
-Total of 3 URLs
-PASS: Vulnerable JS Library [10003]
+Total of 4 URLs
+PASS: Vulnerable JS Library (Powered by Retire.js) [10003]
 PASS: Cookie No HttpOnly Flag [10010]
 PASS: Cookie Without Secure Flag [10011]
 PASS: Cross-Domain JavaScript Source File Inclusion [10017]
@@ -47,21 +47,25 @@ PASS: Charset Mismatch [90011]
 PASS: Application Error Disclosure [90022]
 PASS: WSDL File Detection [90030]
 PASS: Loosely Scoped Cookie [90033]
-IGNORE: Retrieved from Cache [10050] x 2 
+IGNORE: Retrieved from Cache [10050] x 3 
 	https://www.example.com/ (200 OK)
+	https://www.example.com/robots.txt (404 Not Found)
 	https://www.example.com/sitemap.xml (404 Not Found)
 INFO: Re-examine Cache-control Directives [10015] x 1 
 	https://www.example.com/ (200 OK)
-WARN-NEW: X-Content-Type-Options Header Missing [10021] x 1 Custom X-Content-Type-Options message
+WARN-NEW: X-Content-Type-Options Header Missing [10021] x 1 
 	https://www.example.com/ (200 OK)
-WARN-NEW: Strict-Transport-Security Header Not Set [10035] x 2 
+WARN-NEW: Strict-Transport-Security Header Not Set [10035] x 3 
 	https://www.example.com/ (200 OK)
+	https://www.example.com/robots.txt (404 Not Found)
 	https://www.example.com/sitemap.xml (404 Not Found)
-WARN-NEW: Server Leaks Version Information via "Server" HTTP Response Header Field [10036] x 1 
+WARN-NEW: Server Leaks Version Information via "Server" HTTP Response Header Field [10036] x 3 
+	https://www.example.com/ (200 OK)
+	https://www.example.com/robots.txt (404 Not Found)
 	https://www.example.com/sitemap.xml (404 Not Found)
 WARN-NEW: Content Security Policy (CSP) Header Not Set [10038] x 2 
 	https://www.example.com/ (200 OK)
 	https://www.example.com/sitemap.xml (404 Not Found)
-FAIL-NEW: Missing Anti-clickjacking Header [10020] x 1 Custom X-Frame-Options option message
+FAIL-NEW: Missing Anti-clickjacking Header [10020] x 1 
 	https://www.example.com/ (200 OK)
 FAIL-NEW: 1	FAIL-INPROG: 0	WARN-NEW: 4	WARN-INPROG: 0	INFO: 1	IGNORE: 1	PASS: 47

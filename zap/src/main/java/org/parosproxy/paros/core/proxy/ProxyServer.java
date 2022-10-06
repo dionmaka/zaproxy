@@ -42,6 +42,8 @@
 // ZAP: 2019/12/13 Handle proxy port conflict at startup (issue 2016).
 // ZAP: 2020/11/26 Use Log4j 2 classes for logging.
 // ZAP: 2022/02/09 Deprecate the class.
+// ZAP: 2022/05/20 Address deprecation warnings with ConnectionParam.
+// ZAP: 2022/09/21 Use format specifiers instead of concatenation when logging.
 package org.parosproxy.paros.core.proxy;
 
 import java.io.IOException;
@@ -62,8 +64,6 @@ import org.apache.commons.httpclient.URI;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.parosproxy.paros.Constant;
-import org.parosproxy.paros.network.ConnectionParam;
-import org.parosproxy.paros.network.HttpUtil;
 import org.parosproxy.paros.view.View;
 import org.zaproxy.zap.PersistentConnectionListener;
 
@@ -76,7 +76,8 @@ public class ProxyServer implements Runnable {
     protected ServerSocket proxySocket = null;
     protected boolean isProxyRunning = false;
     protected ProxyParam proxyParam = new ProxyParam();
-    protected ConnectionParam connectionParam = new ConnectionParam();
+    protected org.parosproxy.paros.network.ConnectionParam connectionParam =
+            new org.parosproxy.paros.network.ConnectionParam();
     protected Vector<ProxyListener> listenerList = new Vector<>();
     protected Vector<OverrideMessageProxyListener> overrideListeners = new Vector<>();
     protected Vector<PersistentConnectionListener> persistentConnectionListenerList =
@@ -131,11 +132,11 @@ public class ProxyServer implements Runnable {
         return proxyParam;
     }
 
-    public void setConnectionParam(ConnectionParam connection) {
+    public void setConnectionParam(org.parosproxy.paros.network.ConnectionParam connection) {
         connectionParam = connection;
     }
 
-    public ConnectionParam getConnectionParam() {
+    public org.parosproxy.paros.network.ConnectionParam getConnectionParam() {
         return connectionParam;
     }
 
@@ -294,7 +295,7 @@ public class ProxyServer implements Runnable {
         }
 
         isProxyRunning = false;
-        HttpUtil.closeServerSocket(proxySocket);
+        org.parosproxy.paros.network.HttpUtil.closeServerSocket(proxySocket);
 
         try {
             thread.join(); // (PORT_TIME_OUT);
@@ -477,9 +478,7 @@ public class ProxyServer implements Runnable {
             for (Pattern p : excludeUrls) {
                 if (p.matcher(uriString).matches()) {
                     ignore = true;
-                    if (log.isDebugEnabled()) {
-                        log.debug("URL excluded: " + uriString + " Regex: " + p.pattern());
-                    }
+                    log.debug("URL excluded: {} Regex: {}", uriString, p.pattern());
 
                     break;
                 }

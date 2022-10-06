@@ -168,15 +168,15 @@ public class API {
     public void registerApiImplementor(ApiImplementor impl) {
         if (implementors.get(impl.getPrefix()) != null) {
             logger.error(
-                    "Second attempt to register API implementor with prefix of "
-                            + impl.getPrefix());
+                    "Second attempt to register API implementor with prefix of {}",
+                    impl.getPrefix());
             return;
         }
         implementors.put(impl.getPrefix(), impl);
         for (String shortcut : impl.getApiShortcuts()) {
-            logger.debug("Registering API shortcut: " + shortcut);
+            logger.debug("Registering API shortcut: {}", shortcut);
             if (this.shortcuts.containsKey(shortcut)) {
-                logger.error("Duplicate API shortcut: " + shortcut);
+                logger.error("Duplicate API shortcut: {}", shortcut);
             }
             this.shortcuts.put("/" + shortcut, impl);
         }
@@ -195,15 +195,15 @@ public class API {
     public void removeApiImplementor(ApiImplementor impl) {
         if (!implementors.containsKey(impl.getPrefix())) {
             logger.warn(
-                    "Attempting to remove an API implementor not registered, with prefix: "
-                            + impl.getPrefix());
+                    "Attempting to remove an API implementor not registered, with prefix: {}",
+                    impl.getPrefix());
             return;
         }
         implementors.remove(impl.getPrefix());
         for (String shortcut : impl.getApiShortcuts()) {
             String key = "/" + shortcut;
             if (this.shortcuts.containsKey(key)) {
-                logger.debug("Removing registered API shortcut: " + shortcut);
+                logger.debug("Removing registered API shortcut: {}", shortcut);
                 this.shortcuts.remove(key);
             }
         }
@@ -265,19 +265,15 @@ public class API {
                 return true;
             }
             logger.warn(
-                    "Request to API URL "
-                            + requestHeader.getURI().toString()
-                            + " with host header "
-                            + requestHeader.getHostName()
-                            + " not permitted");
+                    "Request to API URL {} with host header {} not permitted",
+                    requestHeader.getURI(),
+                    requestHeader.getHostName());
             return false;
         }
         logger.warn(
-                "Request to API URL "
-                        + requestHeader.getURI().toString()
-                        + " from "
-                        + requestHeader.getSenderAddress().getHostAddress()
-                        + " not permitted");
+                "Request to API URL {} from {} not permitted",
+                requestHeader.getURI(),
+                requestHeader.getSenderAddress().getHostAddress());
         return false;
     }
 
@@ -306,7 +302,7 @@ public class API {
 
         // Check for callbacks
         if (url.contains(CALL_BACK_URL)) {
-            logger.debug("handleApiRequest Callback: " + url);
+            logger.debug("handleApiRequest Callback: {}", url);
             for (Entry<String, ApiImplementor> callback : callBacks.entrySet()) {
                 if (url.startsWith(callback.getKey())) {
                     callbackImpl = callback.getValue();
@@ -314,12 +310,21 @@ public class API {
                 }
             }
             if (callbackImpl == null) {
+                for (Entry<String, String> entry :
+                        this.getOptionsParamApi().getPersistentCallBacks().entrySet()) {
+                    if (url.startsWith(entry.getKey())) {
+                        callbackImpl = this.getImplementors().get(entry.getValue());
+                        if (callbackImpl != null) {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (callbackImpl == null) {
                 logger.warn(
-                        "Request to callback URL "
-                                + requestHeader.getURI().toString()
-                                + " from "
-                                + requestHeader.getSenderAddress().getHostAddress()
-                                + " not found - this could be a callback url from a previous session or possibly an attempt to attack ZAP");
+                        "Request to callback URL {} from {} not found - this could be a callback url from a previous session or possibly an attempt to attack ZAP",
+                        requestHeader.getURI(),
+                        requestHeader.getSenderAddress().getHostAddress());
                 return new HttpMessage();
             }
         }
@@ -349,7 +354,7 @@ public class API {
             return new HttpMessage();
         }
 
-        logger.debug("handleApiRequest " + url);
+        logger.debug("handleApiRequest {}", url);
 
         HttpMessage msg = new HttpMessage();
         msg.setRequestHeader(requestHeader);
@@ -687,7 +692,7 @@ public class API {
                 return responseToHtml(res);
             default:
                 // Should not happen, format validation should prevent this case...
-                logger.error("Unhandled format: " + format);
+                logger.error("Unhandled format: {}", format);
                 throw new ApiException(ApiException.Type.INTERNAL_ERROR);
         }
     }
@@ -829,7 +834,7 @@ public class API {
             return sw.toString();
 
         } catch (Exception e) {
-            logger.error("Failed to convert API response to XML: " + e.getMessage(), e);
+            logger.error("Failed to convert API response to XML: {}", e.getMessage(), e);
             throw new ApiException(ApiException.Type.INTERNAL_ERROR, e);
         }
     }
@@ -893,7 +898,7 @@ public class API {
     public String getCallBackUrl(ApiImplementor impl, String site) {
         String url = site + CALL_BACK_URL + random.nextLong();
         this.callBacks.put(url, impl);
-        logger.debug("Callback " + url + " registered for " + impl.getClass().getCanonicalName());
+        logger.debug("Callback {} registered for {}", url, impl.getClass().getCanonicalName());
         return url;
     }
 
@@ -907,7 +912,7 @@ public class API {
      * @see #removeApiImplementor(ApiImplementor)
      */
     public void removeCallBackUrl(String url) {
-        logger.debug("Callback " + url + " removed");
+        logger.debug("Callback {} removed", url);
         this.callBacks.remove(url);
     }
 
@@ -925,8 +930,40 @@ public class API {
         if (impl == null) {
             throw new IllegalArgumentException("Parameter impl must not be null.");
         }
-        logger.debug("All callbacks removed for " + impl.getClass().getCanonicalName());
+        logger.debug("All callbacks removed for {}", impl.getClass().getCanonicalName());
         this.callBacks.values().removeIf(impl::equals);
+    }
+
+    /**
+     * Get a callback which persists over ZAP restarts - will create one if it doesn't exist
+     *
+     * @param impl the ApiImplementor requesting the callback URL
+     * @param site the site the callback will be on
+     * @return a callback URL
+     * @since 2.12.0
+     */
+    public String getPersistentCallBackUrl(ApiImplementor impl, String site) {
+        for (Entry<String, String> entry :
+                this.getOptionsParamApi().getPersistentCallBacks().entrySet()) {
+            String url = entry.getKey();
+            if (url.startsWith(site) && entry.getValue().equals(impl.getPrefix())) {
+                return url;
+            }
+        }
+        String url = site + CALL_BACK_URL + random.nextLong();
+        this.getOptionsParamApi().addPersistantCallBack(url, impl.getPrefix());
+        return url;
+    }
+
+    /**
+     * Remove a callback which would otherwise persist over ZAP restarts
+     *
+     * @param url the persistent callback URL
+     * @return true if the callback was deleted - false means the callback URL was not found
+     * @since 2.12.0
+     */
+    public boolean removePersistentCallBackUrl(String url) {
+        return this.getOptionsParamApi().removePersistantCallBack(url) != null;
     }
 
     /**
@@ -999,33 +1036,28 @@ public class API {
                 Nonce nonce = nonces.get(nonceParam);
                 if (nonce == null) {
                     logger.warn(
-                            "API nonce "
-                                    + nonceParam
-                                    + " not found in request from "
-                                    + reqHeader.getSenderAddress().getHostAddress());
+                            "API nonce {} not found in request from {}",
+                            nonceParam,
+                            reqHeader.getSenderAddress().getHostAddress());
                     return false;
                 } else if (nonce.isOneTime()) {
                     nonces.remove(nonceParam);
                 }
                 if (!nonce.isValid()) {
                     logger.warn(
-                            "API nonce "
-                                    + nonce.getNonceKey()
-                                    + " expired at "
-                                    + nonce.getExpires().toString()
-                                    + " in request from "
-                                    + reqHeader.getSenderAddress().getHostAddress());
+                            "API nonce {} expired at {} in request from {}",
+                            nonce.getNonceKey(),
+                            nonce.getExpires(),
+                            reqHeader.getSenderAddress().getHostAddress());
                     return false;
                 }
 
                 if (!apiPath.equals(nonce.getApiPath())) {
                     logger.warn(
-                            "API nonce path was "
-                                    + nonce.getApiPath()
-                                    + " but call was for "
-                                    + apiPath
-                                    + " in request from "
-                                    + reqHeader.getSenderAddress().getHostAddress());
+                            "API nonce path was {} but call was for {} in request from {}",
+                            nonce.getApiPath(),
+                            apiPath,
+                            reqHeader.getSenderAddress().getHostAddress());
                     return false;
                 }
             } else {
@@ -1035,10 +1067,9 @@ public class API {
                 }
                 if (!getOptionsParamApi().getKey().equals(keyParam)) {
                     logger.warn(
-                            "API key incorrect or not supplied: "
-                                    + keyParam
-                                    + " in request from "
-                                    + reqHeader.getSenderAddress().getHostAddress());
+                            "API key incorrect or not supplied: {} in request from {}",
+                            keyParam,
+                            reqHeader.getSenderAddress().getHostAddress());
                     return false;
                 }
             }
@@ -1159,11 +1190,9 @@ public class API {
 
     private static void logBadRequest(HttpMessage msg, Exception cause) {
         logger.warn(
-                "Bad request to API endpoint ["
-                        + msg.getRequestHeader().getURI().getEscapedPath()
-                        + "] from ["
-                        + msg.getRequestHeader().getSenderAddress().getHostAddress()
-                        + "]:",
+                "Bad request to API endpoint [{}] from [{}]:",
+                msg.getRequestHeader().getURI().getEscapedPath(),
+                msg.getRequestHeader().getSenderAddress().getHostAddress(),
                 cause);
     }
 

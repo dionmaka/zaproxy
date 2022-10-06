@@ -45,6 +45,7 @@ import org.zaproxy.zap.extension.authorization.AuthorizationDetectionMethod;
 import org.zaproxy.zap.extension.authorization.BasicAuthorizationDetectionMethod;
 import org.zaproxy.zap.extension.authorization.BasicAuthorizationDetectionMethod.LogicalOperator;
 import org.zaproxy.zap.extension.custompages.CustomPage;
+import org.zaproxy.zap.extension.custompages.ExtensionCustomPages;
 import org.zaproxy.zap.session.CookieBasedSessionManagementMethodType.CookieBasedSessionManagementMethod;
 import org.zaproxy.zap.session.SessionManagementMethod;
 
@@ -603,7 +604,7 @@ public class Context {
     }
 
     private void restructureSiteTreeEventHandler() {
-        log.debug("Restructure site tree for context: " + this.getName());
+        log.debug("Restructure site tree for context: {}", this.getName());
         List<SiteNode> nodes = this.getTopNodesInContextFromSiteTree();
         for (SiteNode sn : nodes) {
             checkNode(sn);
@@ -686,8 +687,7 @@ public class Context {
 
         // Add into the right place
         SiteNode sn2 = sitesTree.addPath(sn.getHistoryReference());
-        log.debug(
-                "Moved node " + sn.getHierarchicNodeName() + " to " + sn2.getHierarchicNodeName());
+        log.debug("Moved node {} to {}", sn.getHierarchicNodeName(), sn2.getHierarchicNodeName());
 
         // And sort out the alerts
         for (Alert alert : alerts) {
@@ -696,7 +696,7 @@ public class Context {
     }
 
     private void deleteNode(SiteMap sitesTree, SiteNode sn) {
-        log.debug("Deleting node " + sn.getHierarchicNodeName());
+        log.debug("Deleting node {}", sn.getHierarchicNodeName());
         sn.deleteAlerts(sn.getAlerts());
 
         // Remove old one
@@ -864,6 +864,9 @@ public class Context {
                 return msg.getResponseHeader().getStatusCode() == HttpStatusCode.NOT_FOUND;
             case OK_200:
                 return msg.getResponseHeader().getStatusCode() == HttpStatusCode.OK;
+            case AUTH_4XX:
+                return ExtensionCustomPages.AUTH_HTTP_STATUS_CODES.contains(
+                        msg.getResponseHeader().getStatusCode());
             default:
                 return false;
         }

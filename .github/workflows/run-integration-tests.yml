@@ -10,7 +10,7 @@ jobs:
     name: Build, Push and Run Docker Image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       -
         name: Login to DockerHub
         uses: docker/login-action@v1 
@@ -33,6 +33,9 @@ jobs:
       - 
         name: Run install tests
         run: docker run --rm -t owasp/zap2docker-tests:latest wrk/install_tests.sh
+      - 
+        name: Run python tests
+        run: docker run --rm -t owasp/zap2docker-tests:latest wrk/python_tests.sh
       - 
         name: Run baseline tests
         run: docker run --rm -t owasp/zap2docker-tests:latest wrk/baseline_tests.sh

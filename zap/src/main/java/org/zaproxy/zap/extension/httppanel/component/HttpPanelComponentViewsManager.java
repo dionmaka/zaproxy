@@ -164,7 +164,7 @@ public class HttpPanelComponentViewsManager implements ItemListener, MessageLoca
         HttpPanelView view = views.get(name);
 
         if (view == null) {
-            logger.info("No view found with name: " + name);
+            logger.info("No view found with name: {}", name);
             return;
         }
 
@@ -487,6 +487,10 @@ public class HttpPanelComponentViewsManager implements ItemListener, MessageLoca
         Iterator<HttpPanelView> it = views.values().iterator();
         while (it.hasNext()) {
             it.next().loadConfiguration(fileConfiguration);
+        }
+
+        if (savedSelectedViewName != null && views.containsKey(savedSelectedViewName)) {
+            switchView(savedSelectedViewName);
         }
     }
 

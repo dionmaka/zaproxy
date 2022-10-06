@@ -80,6 +80,7 @@ import org.zaproxy.zap.view.widgets.ContextSelectComboBox;
  *
  * @author psiinon
  */
+@SuppressWarnings("serial")
 public abstract class StandardFieldsDialog extends AbstractDialog {
 
     private static final Logger logger = LogManager.getLogger(StandardFieldsDialog.class);
@@ -1176,7 +1177,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
             }
         } else if (c == null) {
             // Ignore - could be during init
-            logger.debug("No field for " + fieldLabel);
+            logger.debug("No field for {}", fieldLabel);
         } else {
             handleUnexpectedFieldClass(fieldLabel, c);
         }
@@ -1184,12 +1185,10 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
 
     private static void handleUnexpectedFieldClass(String fieldLabel, Component component) {
         logger.error(
-                "Unexpected field class "
-                        + fieldLabel
-                        + ": "
-                        + component.getClass().getCanonicalName()
-                        + "\n\t"
-                        + StringUtils.join(Thread.currentThread().getStackTrace(), "\n\t"));
+                "Unexpected field class {}: {}\n\t{}",
+                fieldLabel,
+                component.getClass().getCanonicalName(),
+                StringUtils.join(Thread.currentThread().getStackTrace(), "\n\t"));
     }
 
     public void setComboFields(String fieldLabel, List<String> choices, String value) {
@@ -1206,7 +1205,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
             }
         } else if (c == null) {
             // Ignore - could be during init
-            logger.debug("No field for " + fieldLabel);
+            logger.debug("No field for {}", fieldLabel);
         } else {
             handleUnexpectedFieldClass(fieldLabel, c);
         }
@@ -1233,7 +1232,7 @@ public abstract class StandardFieldsDialog extends AbstractDialog {
             comboBox.setModel(comboBoxModel);
         } else if (c == null) {
             // Ignore - could be during init
-            logger.debug("No field for " + fieldLabel);
+            logger.debug("No field for {}", fieldLabel);
         } else {
             handleUnexpectedFieldClass(fieldLabel, c);
         }
